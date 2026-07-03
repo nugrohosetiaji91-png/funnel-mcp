@@ -1452,8 +1452,11 @@ async def mcp_handler(request: Request):
         is_claude = "claude" in cname_l
         is_gpt = any(x in cname_l for x in ("chatgpt", "openai", "gpt"))
         ctx = _build_context(include_memory=is_claude, include_skills=is_gpt or not is_claude)
+        _req_pv = str(params.get("protocolVersion", "") or "")
+        _supported_pv = ("2024-11-05", "2025-03-26", "2025-06-18", "2025-11-25")
+        _pv = _req_pv if _req_pv in _supported_pv else "2025-06-18"
         resp = {"jsonrpc": "2.0", "id": msg_id, "result": {
-            "protocolVersion": "2025-11-25",
+            "protocolVersion": _pv,
             "capabilities": {"tools": {}, "experimental": {}},
             "serverInfo": {"name": "funnel-mcp", "version": "1.0"},
             "instructions": ctx
@@ -1490,7 +1493,7 @@ async def mcp_handler(request: Request):
         return StreamingResponse(iter([sse(resp)]), media_type="text/event-stream",
             headers={"mcp-session-id": sid, "Access-Control-Allow-Origin": "*"})
 
-routes = [Route("/", endpoint=mcp_handler, methods=["GET", "POST", "OPTIONS"]), Route("/sse", endpoint=mcp_handler, methods=["GET", "POST", "OPTIONS"])]
+routes = [Route("/", endpoint=mcp_handler, methods=["GET", "POST", "OPTIONS"]), Route("/sse", endpoint=mcp_handler, methods=["GET", "POST", "OPTIONS"]), Route("/mcp", endpoint=mcp_handler, methods=["GET", "POST", "OPTIONS"])]
 
 # Secret path auth — token from .funnel_token (keep out of git)
 FUNNEL_TOKEN_FILE = os.path.join(MCP_DIR, ".funnel_token")
