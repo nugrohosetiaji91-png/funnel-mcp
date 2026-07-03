@@ -12,41 +12,48 @@ You want ChatGPT or Grok to control your PC — run commands, browse the web, ma
 Tailscale Funnel gives you a **free public HTTPS URL** without opening ports. Secret-path auth means only someone with the token can reach your server. One Python file, zero config.
 
 ```mermaid
-graph TB
-    subgraph Internet
-        GPT[ChatGPT]
-        Grok[Grok]
+flowchart LR
+    subgraph clients["🤖 AI Clients"]
+        direction TB
+        GPT["ChatGPT"]
+        Grok["Grok"]
     end
 
-    subgraph "Tailscale"
-        Funnel["🌐 Tailscale Funnel<br/>public HTTPS · no open ports"]
+    subgraph ts["🌐 Tailscale"]
+        Funnel["Funnel<br/><small>public HTTPS · zero open ports</small>"]
     end
 
-    subgraph "Your Machine"
-        Auth["🔑 Secret-path auth<br/>fails closed if no token"]
+    subgraph machine["💻 Your Windows Machine"]
+        direction LR
+        Auth["🔑 Secret-path auth<br/><small>fails closed without token</small>"]
+        Server["server.py :8000<br/><small>Starlette · Uvicorn</small>"]
 
-        Server["<b>server.py</b> :8000<br/>Starlette · Uvicorn"]
-
-        subgraph "12 Tools"
-            CMD[PowerShell]
-            PY[Python 3]
-            FS[File I/O]
-            Web[Web · Search · Browse]
-            Git[Git]
-            Sys[System · Screenshot]
-            Mem[(SQLite Memory)]
-            Self[Self-improve]
-            CDP[Chrome CDP]
-            Task[Task Runner]
-            Think[Think]
-            TS[Tailscale]
+        subgraph tools["12 Tools"]
+            direction TB
+            Exec["⚡ Execute<br/><small>PowerShell · Python · Task Runner</small>"]
+            Data["📁 Data<br/><small>Files · Git · SQLite Memory</small>"]
+            Web["🔎 Web<br/><small>Search · Fetch · Playwright · Chrome CDP</small>"]
+            Sys["🖥️ System<br/><small>Info · Screenshot · Tailscale</small>"]
+            Meta["🧠 Meta<br/><small>Think · Self-improve</small>"]
         end
     end
 
-    GPT & Grok -- "HTTPS · JSON-RPC" ---> Funnel
-    Funnel -- "TLS encrypted" ---> Auth
+    GPT & Grok -- "HTTPS · JSON-RPC" --> Funnel
+    Funnel -- "WireGuard encrypted" --> Auth
     Auth --> Server
-    Server --> CMD & PY & FS & Web & Git & Sys & Mem & Self & CDP & Task & Think & TS
+    Server --> Exec & Data & Web & Sys & Meta
+
+    classDef client fill:#e8f0fe,stroke:#4285f4,stroke-width:2px,color:#1a1a1a
+    classDef network fill:#e6f4ea,stroke:#34a853,stroke-width:2px,color:#1a1a1a
+    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px,color:#1a1a1a
+    classDef core fill:#fce8e6,stroke:#ea4335,stroke-width:2px,color:#1a1a1a
+    classDef tool fill:#f1f3f4,stroke:#5f6368,stroke-width:1px,color:#1a1a1a
+
+    class GPT,Grok client
+    class Funnel network
+    class Auth security
+    class Server core
+    class Exec,Data,Web,Sys,Meta tool
 ```
 
 ## Requirements
