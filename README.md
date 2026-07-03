@@ -12,42 +12,36 @@ You want ChatGPT or Grok to control your PC — run commands, browse the web, ma
 Tailscale Funnel gives you a **free public HTTPS URL** without opening ports. Secret-path auth means only someone with the token can reach your server. One Python file, zero config.
 
 ```mermaid
-flowchart LR
-    subgraph clients["🤖 AI Clients"]
-        direction TB
+flowchart TB
+    subgraph clients["AI Clients"]
+        direction LR
         GPT["ChatGPT"]
         Grok["Grok"]
     end
 
-    subgraph ts["🌐 Tailscale"]
-        Funnel["Funnel<br/><small>public HTTPS · zero open ports</small>"]
-    end
+    Funnel["Tailscale Funnel<br/>public HTTPS &mdash; zero open ports"]
+    Auth["Secret-path auth<br/>fails closed without token"]
+    Server["server.py :8000<br/>Starlette + Uvicorn"]
 
-    subgraph machine["💻 Your Windows Machine"]
+    subgraph tools["12 Tools"]
         direction LR
-        Auth["🔑 Secret-path auth<br/><small>fails closed without token</small>"]
-        Server["server.py :8000<br/><small>Starlette · Uvicorn</small>"]
-
-        subgraph tools["12 Tools"]
-            direction TB
-            Exec["⚡ Execute<br/><small>PowerShell · Python · Task Runner</small>"]
-            Data["📁 Data<br/><small>Files · Git · SQLite Memory</small>"]
-            Web["🔎 Web<br/><small>Search · Fetch · Playwright · Chrome CDP</small>"]
-            Sys["🖥️ System<br/><small>Info · Screenshot · Tailscale</small>"]
-            Meta["🧠 Meta<br/><small>Think · Self-improve</small>"]
-        end
+        Exec["Execute<br/>PowerShell<br/>Python<br/>Task Runner"]
+        Data["Data<br/>Files<br/>Git<br/>SQLite Memory"]
+        Web["Web<br/>Search / Fetch<br/>Playwright<br/>Chrome CDP"]
+        Sys["System<br/>Info<br/>Screenshot<br/>Tailscale"]
+        Meta["Meta<br/>Think<br/>Self-improve"]
     end
 
-    GPT & Grok -- "HTTPS · JSON-RPC" --> Funnel
+    GPT & Grok -- "HTTPS JSON-RPC" --> Funnel
     Funnel -- "WireGuard encrypted" --> Auth
     Auth --> Server
     Server --> Exec & Data & Web & Sys & Meta
 
-    classDef client fill:#e8f0fe,stroke:#4285f4,stroke-width:2px,color:#1a1a1a
-    classDef network fill:#e6f4ea,stroke:#34a853,stroke-width:2px,color:#1a1a1a
-    classDef security fill:#fef7e0,stroke:#f9ab00,stroke-width:2px,color:#1a1a1a
-    classDef core fill:#fce8e6,stroke:#ea4335,stroke-width:2px,color:#1a1a1a
-    classDef tool fill:#f1f3f4,stroke:#5f6368,stroke-width:1px,color:#1a1a1a
+    classDef client fill:#4285f4,stroke:#4285f4,color:#fff
+    classDef network fill:#34a853,stroke:#34a853,color:#fff
+    classDef security fill:#f9ab00,stroke:#f9ab00,color:#1a1a1a
+    classDef core fill:#ea4335,stroke:#ea4335,color:#fff
+    classDef tool fill:#5f6368,stroke:#5f6368,color:#fff
 
     class GPT,Grok client
     class Funnel network
