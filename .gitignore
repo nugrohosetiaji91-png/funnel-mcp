@@ -1,0 +1,13 @@
+# Token - NEVER COMMIT
+.funnel_token
+*.token
+*.key
+
+# Python
+__pycache__/
+*.pyc
+*.db
+*.jsonl
+
+# OS
+Thumbs.db
