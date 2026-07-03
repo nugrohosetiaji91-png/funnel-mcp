@@ -1,0 +1,6 @@
+starlette>=0.37
+uvicorn>=0.29
+
+# Optional — only needed for specific tools:
+# playwright  # web(browse) tool
+# mss         # system(screenshot) tool

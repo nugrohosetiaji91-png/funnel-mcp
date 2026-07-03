@@ -1,6 +1,6 @@
 # funnel-mcp
 
-> Turn any machine into an AI workstation. No cloud, no port forwarding, no public IP.
+> Turn any Windows machine into an AI workstation. No cloud, no port forwarding, no public IP.
 > Just Tailscale Funnel + a single Python file.
 
 ## The Problem
@@ -49,19 +49,27 @@ graph TB
     Server --> CMD & PY & FS & Web & Git & Sys & Mem & Self & CDP & Task & Think & TS
 ```
 
+## Requirements
+
+- Windows 10/11 (tools use PowerShell; `screenshot` and `browser` are Windows-tested)
+- Python 3.11+
+- [Tailscale](https://tailscale.com/) with [Funnel](https://tailscale.com/kb/1223/funnel) enabled
+
 ## Quick Start
 
-```bash
-# 1. Install Tailscale + enable Funnel
-tailscale up
-tailscale funnel 8000
+```powershell
+# 1. Install dependencies
+pip install -r requirements.txt
 
-# 2. Generate a secret token
-openssl rand -hex 16 > .funnel_token
+# 2. Generate a secret token (server refuses to start without it)
+python -c "import secrets; open('.funnel_token','w').write(secrets.token_hex(16))"
 
 # 3. Start the server
-pip install starlette uvicorn
 python server.py
+
+# 4. Expose it via Tailscale Funnel
+tailscale up
+tailscale funnel 8000
 ```
 
 Connect GPT/Grok to: `https://YOUR-MACHINE.tailXXXXX.ts.net/YOUR-TOKEN/`
@@ -103,6 +111,10 @@ No human needed. The `self` tool chain lets AI patch `server.py`, verify syntax,
 | Git-safe | `.gitignore` blocks the token file |
 
 > ⚠️ The full URL (domain + token) is the only key. Share it carefully.
+>
+> Because the token lives in the URL path, it can end up in places URLs normally do:
+> browser history, access logs, and referrer headers. Treat the URL like a password —
+> don't paste it in public, and rotate it by regenerating `.funnel_token` and restarting.
 
 ## License
 
