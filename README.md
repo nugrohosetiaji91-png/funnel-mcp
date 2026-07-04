@@ -15,44 +15,11 @@ You want ChatGPT or Grok to control your PC — run commands, browse the web, ma
 
 Tailscale Funnel gives you a **free public HTTPS URL** without opening ports. Secret-path auth means only someone with the token can reach your server. One Python file, zero config.
 
-```mermaid
-flowchart TB
-    subgraph clients["AI Clients"]
-        direction LR
-        GPT["ChatGPT"]
-        Grok["Grok"]
-    end
+## Architecture
 
-    Funnel["Tailscale Funnel<br/>public HTTPS &mdash; zero open ports"]
-    Auth["Secret-path auth<br/>fails closed without token"]
-    Server["server.py :8000<br/>Starlette + Uvicorn"]
-
-    subgraph tools["12 Tools"]
-        direction LR
-        Exec["Execute<br/>PowerShell<br/>Python<br/>Task Runner"]
-        Data["Data<br/>Files<br/>Git<br/>SQLite Memory"]
-        Web["Web<br/>Search / Fetch<br/>Playwright<br/>Chrome CDP"]
-        Sys["System<br/>Info<br/>Screenshot<br/>Tailscale"]
-        Meta["Meta<br/>Think<br/>Self-improve"]
-    end
-
-    GPT & Grok -- "HTTPS JSON-RPC" --> Funnel
-    Funnel -- "WireGuard encrypted" --> Auth
-    Auth --> Server
-    Server --> Exec & Data & Web & Sys & Meta
-
-    classDef client fill:#4285f4,stroke:#4285f4,color:#fff
-    classDef network fill:#34a853,stroke:#34a853,color:#fff
-    classDef security fill:#f9ab00,stroke:#f9ab00,color:#1a1a1a
-    classDef core fill:#ea4335,stroke:#ea4335,color:#fff
-    classDef tool fill:#5f6368,stroke:#5f6368,color:#fff
-
-    class GPT,Grok client
-    class Funnel network
-    class Auth security
-    class Server core
-    class Exec,Data,Web,Sys,Meta tool
-```
+<p align="center">
+  <img src="assets/funnel_arch.png" alt="Workbench MCP Architecture" width="100%">
+</p>
 
 ## Requirements
 
