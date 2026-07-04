@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/funnel.png" alt="Project Banner" width="100%">
+</p>
+
 # funnel-mcp
 
 > Turn any Windows machine into an AI workstation. No cloud, no port forwarding, no public IP.
