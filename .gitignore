@@ -11,3 +11,6 @@ __pycache__/
 
 # OS
 Thumbs.db
+
+# Logs - access log contains secret token path
+*.log
