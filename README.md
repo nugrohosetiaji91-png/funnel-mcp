@@ -18,7 +18,7 @@ Tailscale Funnel gives you a **free public HTTPS URL** without opening ports. Se
 ## Architecture
 
 <p align="center">
-  <img src="assets/funnel_arch.png" alt="alt="Funnel MCP Architecture" width="100%">
+  <img src="assets/funnel_arch.png" alt="Funnel MCP Architecture" width="100%">
 </p>
 
 ## Requirements
