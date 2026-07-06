@@ -9,7 +9,7 @@
 
 ## The Problem
 
-You want ChatGPT or Grok to control your PC — run commands, browse the web, manage files. But MCP servers need either local stdio (Claude Desktop only) or a public HTTPS endpoint (hard to set up, risky to expose).
+You want ChatGPT to control your PC — run commands, browse the web, manage files. But MCP servers need either local stdio (Claude Desktop only) or a public HTTPS endpoint (hard to set up, risky to expose).
 
 ## The Solution
 
@@ -44,7 +44,7 @@ tailscale up
 tailscale funnel 8000
 ```
 
-Connect GPT/Grok to: `https://YOUR-MACHINE.tailXXXXX.ts.net/YOUR-TOKEN/`
+Connect GPT: `https://YOUR-MACHINE.tailXXXXX.ts.net/YOUR-TOKEN/`
 
 ## Tools
 
