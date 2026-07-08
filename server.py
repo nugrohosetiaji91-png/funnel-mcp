@@ -15,10 +15,10 @@ import uvicorn
 import platform
 if platform.system() == "Windows":
     MCP_DIR = os.environ.get("MCP_DIR", os.path.expanduser("~/mcp-server"))
-    MEMORY_DB = os.path.join(os.environ.get("TEMP", r"C:\Windows\Temp"), "pc_tools_memory.db")
 else:
     MCP_DIR = os.path.expanduser("~/mcp-server")
-    MEMORY_DB = os.path.join(os.environ.get("TMPDIR", "/tmp"), "pc_tools_memory.db")
+os.makedirs(MCP_DIR, exist_ok=True)
+MEMORY_DB = os.path.join(MCP_DIR, "pc_tools_memory.db")
 EXPERIENCE_LOG = os.path.join(MCP_DIR, ".mcp_experience.jsonl")
 MAX_RETRIES = 5
 RETRY_TOOL_CHAIN = ("run_command", "run_python", "file", "system", "web", "self")
@@ -26,6 +26,12 @@ RETRY_TOOL_CHAIN = ("run_command", "run_python", "file", "system", "web", "self"
 # Helpers
 
 GIT_EXE = r"C:\Program Files\Git\cmd\git.exe"
+
+def _get_git_exe():
+    if os.path.isfile(GIT_EXE):
+        return GIT_EXE
+    import shutil as _shutil
+    return _shutil.which("git") or "git"
 
 def _truncate_output(text: str, max_chars: int = 50000, tail_lines: int = 0) -> str:
     if tail_lines and tail_lines > 0:
@@ -52,13 +58,12 @@ def _ps(cmd, timeout=30, cwd=None):
         return "Error: %s" % e
 
 def _git(cmd, repo, timeout=20):
-    if not os.path.isfile(GIT_EXE):
-        return "Error: git not found at %s" % GIT_EXE
+    git_exe = _get_git_exe()
     if not os.path.isdir(repo):
         return "Error: not a directory: %s" % repo
     try:
         r = subprocess.run(
-            [GIT_EXE, "-C", repo] + cmd, capture_output=True, text=True,
+            [git_exe, "-C", repo] + cmd, capture_output=True, text=True,
             timeout=timeout, encoding="utf-8", errors="replace",
         )
         out = _truncate_output((r.stdout or "") + ("\n" + r.stderr if r.stderr else ""), 40000)
@@ -1048,8 +1053,19 @@ def handle(name, args):
                     % (MAX_RETRIES, MAX_RETRIES)
                 )
             elif sa == "restart":
-                subprocess.Popen([sys.executable, sp], cwd=os.environ.get("TEMP","C:\\Windows\\Temp"))
-                return "Restarting..."
+                import threading, time as _time
+
+                def _deferred_restart(server_path):
+                    _time.sleep(1.5)  # let this HTTP response flush back to the client first
+                    subprocess.Popen(
+                        [sys.executable, server_path],
+                        cwd=os.path.dirname(server_path) or MCP_DIR,
+                        close_fds=True,
+                    )
+                    os._exit(0)  # exit current process so the child can rebind port 8000
+
+                threading.Thread(target=_deferred_restart, args=(sp,), daemon=True).start()
+                return "Restart initiated: this process exits and relaunches in ~1.5s (port 8000 released first)."
             return "self improve actions: read | backup | patch | guide | restart"
         elif a == "insight":
             try:
@@ -1190,12 +1206,25 @@ def handle(name, args):
                 self.s.sendall(bytes(hdr) + bytes(b ^ mask[i % 4] for i, b in enumerate(data)))
                 return self._id
             def _recv_frame(self):
-                b1 = self.s.recv(1)[0]; fin = b1 & 0x80
-                b2 = self.s.recv(1)[0]; l = b2 & 0x7f
-                if l == 126: l = struct.unpack(">H", self.s.recv(2))[0]
-                elif l == 127: l = struct.unpack(">Q", self.s.recv(8))[0]
+                r1 = self.s.recv(1)
+                if not r1: raise ConnectionError("WebSocket closed by remote host")
+                b1 = r1[0]; fin = b1 & 0x80
+                r2 = self.s.recv(1)
+                if not r2: raise ConnectionError("WebSocket closed during frame read")
+                b2 = r2[0]; l = b2 & 0x7f
+                if l == 126:
+                    rl = self.s.recv(2)
+                    if len(rl) < 2: raise ConnectionError("WebSocket EOF (len16)")
+                    l = struct.unpack(">H", rl)[0]
+                elif l == 127:
+                    rl = self.s.recv(8)
+                    if len(rl) < 8: raise ConnectionError("WebSocket EOF (len64)")
+                    l = struct.unpack(">Q", rl)[0]
                 buf = b""
-                while len(buf) < l: buf += self.s.recv(min(65536, l - len(buf)))
+                while len(buf) < l:
+                    chunk = self.s.recv(min(65536, l - len(buf)))
+                    if not chunk: raise ConnectionError("WebSocket EOF during payload")
+                    buf += chunk
                 return fin, buf
             def _recv_msg(self):
                 fin, buf = self._recv_frame()
@@ -1519,6 +1548,22 @@ class SecretPathAuth:
             resp = JSONResponse({"error": "auth not configured"}, status_code=503)
             await resp(scope, receive, send)
             return
+
+        # 1. Header-based auth first (token in a header, not the URL --
+        #    avoids leaking it via browser history / access logs / referrers)
+        headers = dict(scope.get("headers", []))
+        auth_header = headers.get(b"authorization", b"").decode("utf-8", "replace")
+        custom_token = headers.get(b"x-funnel-token", b"").decode("utf-8", "replace")
+        authorized = (
+            auth_header == "Bearer " + FUNNEL_TOKEN
+            or auth_header == FUNNEL_TOKEN
+            or custom_token == FUNNEL_TOKEN
+        )
+        if authorized:
+            await self.inner(scope, receive, send)
+            return
+
+        # 2. Fallback: secret-path auth (kept for backward compatibility)
         prefix = "/" + FUNNEL_TOKEN
         path = scope.get("path", "")
         if path == prefix or path.startswith(prefix + "/"):
